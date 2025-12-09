@@ -1,0 +1,98 @@
+Cloning from https://github.com/odilbek1986/giganews-bot
+==> Checking out commit 797dad2a6908e43ba0ea0cc2a69297897ed111a3 in branch main
+==> Installing Python version 3.13.4...
+==> Using Python version 3.13.4 (default)
+==> Docs on specifying a Python version: https://render.com/docs/python-version
+==> Using Poetry version 2.1.3 (default)
+==> Docs on specifying a Poetry version: https://render.com/docs/poetry-version
+==> Running build command 'pip install -r requirements.txt'...
+Collecting python-telegram-bot==13.15 (from -r requirements.txt (line 1))
+  Downloading python_telegram_bot-13.15-py3-none-any.whl.metadata (11 kB)
+Collecting feedparser (from -r requirements.txt (line 2))
+  Downloading feedparser-6.0.12-py3-none-any.whl.metadata (2.7 kB)
+Collecting requests (from -r requirements.txt (line 3))
+  Downloading requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+Collecting python-dotenv (from -r requirements.txt (line 4))
+  Downloading python_dotenv-1.2.1-py3-none-any.whl.metadata (25 kB)
+Collecting certifi (from python-telegram-bot==13.15->-r requirements.txt (line 1))
+  Downloading certifi-2025.11.12-py3-none-any.whl.metadata (2.5 kB)
+Collecting tornado==6.1 (from python-telegram-bot==13.15->-r requirements.txt (line 1))
+  Downloading tornado-6.1.tar.gz (497 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting APScheduler==3.6.3 (from python-telegram-bot==13.15->-r requirements.txt (line 1))
+  Downloading APScheduler-3.6.3-py2.py3-none-any.whl.metadata (5.4 kB)
+Collecting pytz>=2018.6 (from python-telegram-bot==13.15->-r requirements.txt (line 1))
+  Downloading pytz-2025.2-py2.py3-none-any.whl.metadata (22 kB)
+Collecting cachetools==4.2.2 (from python-telegram-bot==13.15->-r requirements.txt (line 1))
+  Downloading cachetools-4.2.2-py3-none-any.whl.metadata (4.6 kB)
+Collecting setuptools>=0.7 (from APScheduler==3.6.3->python-telegram-bot==13.15->-r requirements.txt (line 1))
+  Using cached setuptools-80.9.0-py3-none-any.whl.metadata (6.6 kB)
+Collecting six>=1.4.0 (from APScheduler==3.6.3->python-telegram-bot==13.15->-r requirements.txt (line 1))
+  Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting tzlocal>=1.2 (from APScheduler==3.6.3->python-telegram-bot==13.15->-r requirements.txt (line 1))
+  Downloading tzlocal-5.3.1-py3-none-any.whl.metadata (7.6 kB)
+Collecting sgmllib3k (from feedparser->-r requirements.txt (line 2))
+  Downloading sgmllib3k-1.0.0.tar.gz (5.8 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting charset_normalizer<4,>=2 (from requests->-r requirements.txt (line 3))
+  Downloading charset_normalizer-3.4.4-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (37 kB)
+Collecting idna<4,>=2.5 (from requests->-r requirements.txt (line 3))
+  Downloading idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+Collecting urllib3<3,>=1.21.1 (from requests->-r requirements.txt (line 3))
+  Downloading urllib3-2.6.1-py3-none-any.whl.metadata (6.6 kB)
+Downloading python_telegram_bot-13.15-py3-none-any.whl (519 kB)
+Downloading APScheduler-3.6.3-py2.py3-none-any.whl (58 kB)
+Downloading cachetools-4.2.2-py3-none-any.whl (11 kB)
+Downloading feedparser-6.0.12-py3-none-any.whl (81 kB)
+Downloading requests-2.32.5-py3-none-any.whl (64 kB)
+Downloading charset_normalizer-3.4.4-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (153 kB)
+Downloading idna-3.11-py3-none-any.whl (71 kB)
+Downloading urllib3-2.6.1-py3-none-any.whl (131 kB)
+Downloading python_dotenv-1.2.1-py3-none-any.whl (21 kB)
+Downloading certifi-2025.11.12-py3-none-any.whl (159 kB)
+Downloading pytz-2025.2-py2.py3-none-any.whl (509 kB)
+Using cached setuptools-80.9.0-py3-none-any.whl (1.2 MB)
+Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+Downloading tzlocal-5.3.1-py3-none-any.whl (18 kB)
+Building wheels for collected packages: tornado, sgmllib3k
+  Building wheel for tornado (pyproject.toml): started
+  Building wheel for tornado (pyproject.toml): finished with status 'done'
+  Created wheel for tornado: filename=tornado-6.1-cp313-cp313-linux_x86_64.whl size=421950 sha256=44bf3e60316d94f8a41f91afa81b2e9507696db7c771f1ddac007f719711d1cc
+  Stored in directory: /opt/render/.cache/wheels/04/02/b1/99ad7ab3ce0bc222cdd2586ca20193ba1b9955a8cf98ac2ad8
+  Building wheel for sgmllib3k (pyproject.toml): started
+  Building wheel for sgmllib3k (pyproject.toml): finished with status 'done'
+  Created wheel for sgmllib3k: filename=sgmllib3k-1.0.0-py3-none-any.whl size=6089 sha256=25e6ee61970fd2c7c9077595f9a04a236ad79fc6bd11cf61005c9ff36e2c5d7c
+  Stored in directory: /opt/render/.cache/wheels/3d/4d/ef/37cdccc18d6fd7e0dd7817dcdf9146d4d6789c32a227a28134
+Successfully built tornado sgmllib3k
+Installing collected packages: sgmllib3k, pytz, urllib3, tzlocal, tornado, six, setuptools, python-dotenv, idna, feedparser, charset_normalizer, certifi, cachetools, requests, APScheduler, python-telegram-bot
+Successfully installed APScheduler-3.6.3 cachetools-4.2.2 certifi-2025.11.12 charset_normalizer-3.4.4 feedparser-6.0.12 idna-3.11 python-dotenv-1.2.1 python-telegram-bot-13.15 pytz-2025.2 requests-2.32.5 setuptools-80.9.0 sgmllib3k-1.0.0 six-1.17.0 tornado-6.1 tzlocal-5.3.1 urllib3-2.6.1
+[notice] A new release of pip is available: 25.1.1 -> 25.3
+[notice] To update, run: pip install --upgrade pip
+==> Uploading build...
+==> Uploaded in 12.8s. Compression took 3.9s
+==> Build successful 🎉
+==> Deploying...
+==> No open ports detected, continuing to scan...
+==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+==> Running 'python news_bot.py'
+Traceback (most recent call last):
+  File "/opt/render/project/src/news_bot.py", line 8, in <module>
+    import httpx
+ModuleNotFoundError: No module named 'httpx'
+==> Exited with status 1
+==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+==> Running 'python news_bot.py'
+Traceback (most recent call last):
+  File "/opt/render/project/src/news_bot.py", line 8, in <module>
+    import httpx
+ModuleNotFoundError: No module named 'httpx'
