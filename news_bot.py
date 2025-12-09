@@ -1,0 +1,275 @@
+# news_bot.py
+import time
+import logging
+import re
+from html import escape
+
+import feedparser
+import httpx
+
+# ========== SOZLAMLAR ==========
+
+# Bot tokeningni bu yerga yoz:
+BOT_TOKEN = "8383119570:AAGu7FtVxrzcjy81w23MSI9HboVr7QaManA"
+
+# Yangilik chiqadigan kanal / guruh chat_id (masalan: -1001234567890)
+TARGET_CHAT_ID = -1003369735509
+
+# Avto-post oralig'i: 20 daqiqa
+POST_INTERVAL_SECONDS = 20 * 60  # 20 * 60 = 1200 soniya
+
+# RSS manbalar ro'yxati
+RSS_FEEDS = {
+    "Kun.uz": "https://kun.uz/news/rss",
+    "Lenta.ru": "https://lenta.ru/rss/news",
+    "BBC": "http://feeds.bbci.co.uk/news/world/rss.xml",
+    "Reuters": "http://feeds.reuters.com/Reuters/worldNews",
+}
+
+# Har manbaga alohida limit (o'quvchini bezdirmaslik uchun)
+PER_SOURCE_LIMITS = {
+    "Kun.uz": 5,     # mahalliy yangilikdan 5 ta
+    "Lenta.ru": 2,   # Lenta.ru dan atigi 2 ta
+    "BBC": 3,        # BBC dan 3 ta
+    "Reuters": 3,    # Reuters dan 3 ta
+}
+
+# Bir sessiyada yuborilgan linklar (dublikatni bloklash uchun)
+sent_links: set[str] = set()
+
+
+# ========== RSS YORDAMCHI FUNKSIYALAR ==========
+
+def extract_lenta_image(summary_html: str) -> str | None:
+    """Lenta.ru RSS summary HTML ichidan birinchi <img src="..."> rasm URL-ni topadi."""
+    if not summary_html:
+        return None
+    match = re.search(r'<img[^>]+src="([^"]+)"', summary_html)
+    if match:
+        return match.group(1)
+    return None
+
+
+def extract_kunuz_image(article_url: str) -> str | None:
+    """
+    Kun.uz maqola sahifasidan asosiy rasmni aniq topadi:
+    1) <div class="news-img"><img src="...">
+    2) yoki <meta property="og:image"> dan oladi
+    """
+    try:
+        resp = httpx.get(article_url, timeout=10.0, follow_redirects=True)
+        html = resp.text
+    except Exception as e:
+        logging.error(f"Kun.uz sahifasini yuklashda xato: {e}")
+        return None
+
+    # 1) Asosiy maqola rasmi: <div class="news-img"><img src="...">
+    m1 = re.search(r'<div class="news-img".*?<img[^>]+src="([^"]+)"', html, re.S)
+    if m1:
+        url = m1.group(1)
+    else:
+        # 2) Fallback: <meta property="og:image" content="...">
+        m2 = re.search(r'<meta property="og:image" content="([^"]+)"', html)
+        if not m2:
+            return None
+        url = m2.group(1)
+
+    # URL’ni to‘liq qilish
+    if url.startswith("//"):
+        url = "https:" + url
+    elif url.startswith("/"):
+        url = "https://kun.uz" + url
+
+    return url
+
+
+def extract_image_url(entry, source_name: str) -> str | None:
+    """
+    RSS entry ichidan rasm URL-ni topishga harakat qiladi.
+    Avval umumiy formatlarni tekshiradi, keyin Lenta.ru va Kun.uz uchun maxsus variantlarni.
+    """
+    # 1) media_content
+    media_content = entry.get("media_content") or entry.get("media:content")
+    if isinstance(media_content, list) and media_content:
+        url = media_content[0].get("url")
+        if url:
+            return url
+
+    # 2) media_thumbnail
+    media_thumb = entry.get("media_thumbnail") or entry.get("media:thumbnail")
+    if isinstance(media_thumb, list) and media_thumb:
+        url = media_thumb[0].get("url")
+        if url:
+            return url
+
+    # 3) enclosure linklardan
+    for link in entry.get("links", []):
+        if link.get("rel") == "enclosure" and str(link.get("type", "")).startswith("image/"):
+            url = link.get("href")
+            if url:
+                return url
+
+    # 4) LENTA.RU maxsus: summary HTML ichidan <img src="..."> qidiramiz
+    if source_name == "Lenta.ru":
+        summary = entry.get("summary") or ""
+        lenta_img = extract_lenta_image(summary)
+        if lenta_img:
+            return lenta_img
+
+    # 5) KUN.UZ maxsus: maqola sahifasidan <img src="..."> qidiramiz
+    if source_name == "Kun.uz":
+        link = entry.get("link") or ""
+        if link:
+            kun_img = extract_kunuz_image(link)
+            if kun_img:
+                return kun_img
+
+    return None
+
+
+def fetch_rss_items() -> list[dict]:
+    """
+    RSS manbalardan yangiliklarni olib, dublikatlarni filtrlab beradi.
+    Har itemda image_url bo'lishi mumkin.
+    Har manbaga PER_SOURCE_LIMITS bo'yicha limit qo'llanadi.
+    """
+    items: list[dict] = []
+
+    for source_name, url in RSS_FEEDS.items():
+        feed = feedparser.parse(url)
+
+        # Har manba uchun limit (agar topilmasa, default 5)
+        limit = PER_SOURCE_LIMITS.get(source_name, 5)
+
+        for entry in feed.entries[:limit]:
+            link = entry.get("link")
+            if not link:
+                continue
+
+            # Dublikatni RAM darajasida bloklash
+            if link in sent_links:
+                continue
+            sent_links.add(link)
+
+            image_url = extract_image_url(entry, source_name)
+
+            item = {
+                "source": source_name,
+                "title": (entry.get("title") or "").strip(),
+                "summary": (entry.get("summary") or "").strip(),
+                "link": link,
+                "published": (entry.get("published") or "").strip(),
+                "image_url": image_url,
+            }
+            items.append(item)
+
+    return items
+
+
+def format_caption(item: dict) -> str:
+    """
+    Rasm ostiga yoziladigan (yoki oddiy xabardagi) caption matn.
+    Professional, soddalashtirilgan ko'rinish.
+    """
+    title = escape(item["title"])
+    source = escape(item["source"])
+    summary = escape(item["summary"]).replace("\n", " ").strip()
+    link = item["link"]
+    published = item["published"]
+
+    lines: list[str] = [
+        f"<b>{title}</b>",
+        f"Manba: {source}",
+    ]
+
+    if published:
+        lines.append(f"Vaqt: {published}")
+
+    if summary:
+        lines.append("")
+        lines.append(f"Qisqa mazmuni: {summary}")
+
+    lines.append("")
+    # HTML link – preview kartasiz "To‘liq o‘qish"
+    lines.append(f"<a href=\"{link}\">To‘liq o‘qish</a>")
+
+    return "\n".join(lines)
+
+
+# ========== TELEGRAMGA YUBORISH ==========
+
+def send_photo_with_caption(photo_url: str, caption: str):
+    """Rasm URL-ni va captionni yuboradi. Telegram o'zi URL dan rasmni yuklaydi."""
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
+    payload = {
+        "chat_id": TARGET_CHAT_ID,
+        "photo": photo_url,
+        "caption": caption,
+        "parse_mode": "HTML",
+    }
+
+    try:
+        resp = httpx.post(url, json=payload, timeout=30.0)
+        data = resp.json()
+        if not data.get("ok"):
+            logging.error(f"Telegram sendPhoto xatosi: {data}")
+    except Exception as e:
+        logging.error(f"sendPhoto da xato: {e}")
+
+
+def send_text_message(text: str):
+    """Faqat matnli xabar yuboradi (sayt previewsiz)."""
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TARGET_CHAT_ID,
+        "text": text,
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True,
+    }
+
+    try:
+        resp = httpx.post(url, json=payload, timeout=30.0)
+        data = resp.json()
+        if not data.get("ok"):
+            logging.error(f"Telegram sendMessage xatosi: {data}")
+    except Exception as e:
+        logging.error(f"sendMessage da xato: {e}")
+
+
+# ========== ASOSIY LOOP ==========
+
+def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+
+    logging.info("GigaNews bot ishga tushdi. Har 20 daqiqada yangilik yuboriladi.")
+
+    while True:
+        try:
+            items = fetch_rss_items()
+            if not items:
+                logging.info("Yangi yangilik topilmadi.")
+            else:
+                logging.info(f"{len(items)} ta yangi yangilik topildi, yuborilyapti...")
+                for item in items:
+                    caption = format_caption(item)
+                    image_url = item.get("image_url")
+
+                    if image_url:
+                        send_photo_with_caption(image_url, caption)
+                    else:
+                        send_text_message(caption)
+
+                    # flood-limitdan saqlanish uchun kichik pauza
+                    time.sleep(1)
+        except Exception as e:
+            logging.error(f"Asosiy loopda xato: {e}")
+
+        logging.info(f"Keyingi tekshiruv {POST_INTERVAL_SECONDS // 60} daqiqadan keyin...")
+        time.sleep(POST_INTERVAL_SECONDS)
+
+
+if __name__ == "__main__":
+    main()

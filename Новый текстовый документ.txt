@@ -1,0 +1,2 @@
+TOKEN = "8383119570:AAGu7FtVxrzcjy81w23MSI9HboVr7QaManA"          # BotFather bergan token
+CHANNEL_ID = -1003369735509  
