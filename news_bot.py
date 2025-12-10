@@ -190,7 +190,7 @@ def format_caption(item: dict) -> str:
     # 1) Sarlavha (kliklanadigan bo'lsa)
     if link:
         safe_link = escape(link, quote=True)
-        lines.append(f"📰 <a href=\"{safe_link}\"><b>{title}</b></a>")
+        lines.append(f"📰 <b>{title}</b>")
     else:
         lines.append(f"📰 <b>{title}</b>")
 
