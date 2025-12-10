@@ -6,6 +6,9 @@ from html import escape
 
 import feedparser
 import httpx
+import os
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import threading
 
 # ========== SOZLAMLAR ==========
 
@@ -237,6 +240,17 @@ def send_text_message(text: str):
 
 
 # ========== ASOSIY LOOP ==========
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/plain; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+    # HTTP server loglarini o'chirib, Render logini toza tutamiz
+    def log_message(self, format, *args):
+        return
+
 
 def main():
     logging.basicConfig(
@@ -271,5 +285,16 @@ def main():
         time.sleep(POST_INTERVAL_SECONDS)
 
 
+def run_server():
+    # Render Web Service ishlashi uchun port ENV dan olinadi
+    port = int(os.environ.get("PORT", "8000"))
+    server = HTTPServer(("", port), HealthHandler)
+    print(f"Health-check server {port} portda ishlayapti...")
+    server.serve_forever()
+
+
 if __name__ == "__main__":
-    main()
+    # Botni alohida oqimda ishga tushiramiz
+    threading.Thread(target=main, daemon=True).start()
+    # Asosiy oqimda HTTP server ishlaydi (Render portni ko'rsin)
+    run_server()
