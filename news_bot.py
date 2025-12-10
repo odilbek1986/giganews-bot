@@ -1,4 +1,5 @@
-# news_bot.py
+
+.# news_bot.py
 import time
 import logging
 import re
@@ -167,36 +168,56 @@ def fetch_rss_items() -> list[dict]:
             items.append(item)
 
     return items
-
+#==emodzi
 
 def format_caption(item: dict) -> str:
     """
-    Rasm ostiga yoziladigan (yoki oddiy xabardagi) caption matn.
-    Professional, soddalashtirilgan ko'rinish.
+    Rasm ostiga yoziladigan caption:
+    - kliklanadigan sarlavha
+    - manba va vaqt
+    - qisqa mazmun (trunkatsiya qilingan)
+    - hashtaglar
     """
-    title = escape(item["title"])
-    source = escape(item["source"])
-    summary = escape(item["summary"]).replace("\n", " ").strip()
-    link = item["link"]
-    published = item["published"]
+    title = escape(item.get("title", ""))
+    source = escape(item.get("source", ""))
+    summary_raw = (item.get("summary") or "").strip().replace("\n", " ")
+    summary = escape(summary_raw)
+    link = item.get("link") or ""
+    published = item.get("published") or ""
 
-    lines: list[str] = [
-        f"<b>{title}</b>",
-        f"Manba: {source}",
-    ]
+    lines: list[str] = []
 
+    # 1) Sarlavha (kliklanadigan bo'lsa)
+    if link:
+        safe_link = escape(link, quote=True)
+        lines.append(f"📰 <a href=\"{safe_link}\"><b>{title}</b></a>")
+    else:
+        lines.append(f"📰 <b>{title}</b>")
+
+    # 2) Manba va vaqt
+    if source:
+        lines.append(f"🌐 Manba: {source}")
     if published:
-        lines.append(f"Vaqt: {published}")
+        lines.append(f"🕒 {published}")
 
+    # 3) Qisqa mazmun (chegaralangan uzunlik)
     if summary:
+        max_len = 350
+        short = summary
+        if len(short) > max_len:
+            # so'z o'rtasida kesib yubormaslik uchun
+            short = short[:max_len].rsplit(" ", 1)[0] + "..."
         lines.append("")
-        lines.append(f"Qisqa mazmuni: {summary}")
+        lines.append(f"🧾 {short}")
 
-    lines.append("")
-    # HTML link – preview kartasiz "To‘liq o‘qish"
-    lines.append(f"<a href=\"{link}\">To‘liq o‘qish</a>")
+    # 4) Hashtaglar (manba bo'yicha)
+    if source:
+        tag = source.lower().replace(".", "").replace(" ", "")
+        lines.append("")
+        lines.append(f"#{tag} #giganews")
 
     return "\n".join(lines)
+
 
 
 # ========== TELEGRAMGA YUBORISH ==========
